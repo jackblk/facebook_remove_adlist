@@ -2,7 +2,6 @@
 # pylint: disable=missing-class-docstring
 # pylint: disable=missing-function-docstring
 import os
-import re
 import time
 import sys
 from selenium import webdriver
@@ -21,20 +20,20 @@ LOGIN_CONFIG = False
 TIMEOUT_LOGIN = 3 #sec
 
 #Config
-chromeProfile_dir = '--user-data-dir=' + os.path.dirname(os.path.realpath(__file__)) + os.path.sep +'/ChromeProfile'
-FB_URL = 'https://www.facebook.com/ds/preferences/'
+chromeProfile_dir = '--user-data-dir=' + os.path.dirname(os.path.realpath(__file__)) \
+                    + os.path.sep +'/ChromeProfile'
+FB_URL = 'https://www.facebook.com/adpreferences/data'
 
 # ============================
 # Locators
-iframe = (By.XPATH, '//iframe')
-ad_and_business_loc = (By.XPATH, '//div[text()="Advertisers and businesses"]')
-your_interests_loc = (By.XPATH, '//div[text()="Your interests"]')
-see_more_loc = (By.XPATH, '//div[text()="See more"]')
-view_control_btn = (By.XPATH, '//div[text()="View controls"]')
-dont_allow_loc = (By.XPATH, '//div[text()="Showing ads to you using a list"]/../../button/div/div')
-business_name_loc = (By.XPATH, '//div[contains(text(),"List controls")]')
-done_btn_loc = (By.XPATH, '//div[text()="Done"]')
+audience_based_loc = (By.XPATH, '//span[text()="Audience-based advertising"]')
+see_all_business_loc = (By.XPATH, '//div[@aria-label="See All Businesses"]')
 
+businesses_loc = (By.XPATH, '//*[local-name() = "svg"][@class="pzggbiyp"]/../../../../../div[@tabindex="0"]') # pylint: disable=C0301
+list_usage_btn_loc = (By.XPATH, '//span[text()="They uploaded or used a list to reach you."]')
+dont_allow_btn_loc = (By.XPATH, '//span[text()="Showing ads to you using a list"]/../../../../../../../..//div[contains(@aria-label, "Allow")]') # pylint: disable=C0301
+back_btn_loc = (By.XPATH, '//span[text()="List usage"]/../../../..//div[@aria-label="Back"]')
+back_tolist_btn_loc = (By.XPATH, '//span[text()="They uploaded or used a list to reach you."]/../../../../../../../../../..//div[@aria-label="Back"]') # pylint: disable=C0301
 
 
 class RemoveAdlist:
@@ -42,7 +41,8 @@ class RemoveAdlist:
         self.url = url
         self.setup = setup
         self.driver = init_chrome()
-        self.list = None
+        self.list_business_elem = None
+        self.list_business_name = None
 
     def get_element_visible(self, elem_loc, ordinal=0):
         elem = WebDriverWait(self.driver, TIMEOUT_ELE).until(\
@@ -52,47 +52,40 @@ class RemoveAdlist:
         else:
             return elem[ordinal]
 
-    def is_displayed(self, elem_loc):
-        pass
+    def wait_clickable(self, elem_loc):
+        return WebDriverWait(self.driver, TIMEOUT_ELE).until(\
+            EC.element_to_be_clickable(elem_loc))
+
     def prepare_adlist(self):
         self.driver.get(self.url)
         if self.setup:
             time.sleep(300) # wait for 5 mins then do absolutely nothing
             sys.exit()
-        self.driver.switch_to.frame(self.get_element_visible(iframe))
-        interest = self.get_element_visible(your_interests_loc)
-        interest.click()
-        ad_bus_row = self.get_element_visible(ad_and_business_loc)
-        ad_bus_row.click()
-        more = self.get_element_visible(see_more_loc)
-        try:
-            while more.is_displayed():
-                more.click()
-        except:
-            log_step("Loaded all.")
-        self.list = self.get_element_visible(view_control_btn, 'list')
+        self.wait_clickable(audience_based_loc).click()
+        self.wait_clickable(see_all_business_loc).click()
+        WebDriverWait(self.driver, 5).until(\
+            EC.invisibility_of_element_located(see_all_business_loc))
+        self.list_business_elem = self.get_element_visible(businesses_loc, 'list')
+        self.list_business_name = [x.text for x in self.list_business_elem]
 
     def remove_adlist(self):
-        counter = 0
         remove_list = []
-        for elem in self.list:
-            WebDriverWait(self.driver, TIMEOUT_DONT_ALLOW).until(\
-                EC.element_to_be_clickable(view_control_btn))
-            elem.location_once_scrolled_into_view
+        for counter, business_elem in enumerate(self.list_business_elem, 0):
+            business_name = self.list_business_name[counter]
+            business_elem.location_once_scrolled_into_view # pylint: disable=W0104
             try:
-                elem.click()
-            except:
+                business_elem.click()
+            except: # pylint: disable=W0702
                 time.sleep(1)
-                elem.click()
-            business = self.get_element_visible(business_name_loc).text
-            business = re.sub (r'List controls for ', '', business)
-            button = self.get_element_visible(dont_allow_loc)
-            log_step(f"[{counter}] {business}. Button is '{button.text}'\n")
+                business_elem.click()
+            self.wait_clickable(list_usage_btn_loc).click()
+            button = self.wait_clickable(dont_allow_btn_loc)
+            log_step(f"[{counter}] {business_name}. Button is '{button.text}'\n")
             if button.text == "Don't Allow":
                 button.click()
-                remove_list.append(business)
-            self.get_element_visible(done_btn_loc).click()
-            counter += 1
+                remove_list.append(business_name)
+            self.wait_clickable(back_btn_loc).click()
+            self.wait_clickable(back_tolist_btn_loc).click()
         log_step(f"\nRemoved {len(remove_list)}: {remove_list}")
         self.driver.close()
         self.driver.quit()
