@@ -13,6 +13,7 @@ from selenium.webdriver.common.by import By
 TIMEOUT = 10 #sec
 TIMEOUT_ELE = 15 #sec
 TIMEOUT_DONT_ALLOW = 3 #sec
+TIMEOUT_CLICKABLE = 3
 PATH = os.path.sep + os.path.dirname(os.path.realpath(__file__)) + os.path.sep
 SETUP = False
 # Login info
@@ -29,11 +30,11 @@ FB_URL = 'https://www.facebook.com/adpreferences/ad_settings'
 audience_based_loc = (By.XPATH, '//span[text()="Audience-based advertising"]')
 see_all_business_loc = (By.XPATH, '//div[@aria-label="See All Businesses"]')
 
-businesses_loc = (By.XPATH, '//*[local-name() = "svg"][@class="pzggbiyp"]/../../../../../div[@tabindex="0"]') # pylint: disable=C0301
-list_usage_btn_loc = (By.XPATH, '//span[text()="They uploaded or used a list to reach you."]')
-dont_allow_btn_loc = (By.XPATH, '//span[text()="Showing ads to you using a list"]/../../../../../../../..//div[contains(@aria-label, "Allow")]') # pylint: disable=C0301
-back_btn_loc = (By.XPATH, '//span[text()="List usage"]/../../../..//div[@aria-label="Back"]')
-back_tolist_btn_loc = (By.XPATH, '//span[text()="They uploaded or used a list to reach you."]/../../../../../../../../../..//div[@aria-label="Back"]') # pylint: disable=C0301
+businesses_loc = (By.XPATH, '//span[contains(text(), "Audience-based")]/../../../..//div[contains(@style,"padding-top: 8px;")]/div/div') # pylint: disable=C0301
+list_usage_btn_loc = (By.XPATH, '//span[contains(text(), "You may have")]|//span[contains(text(), "They uploaded")]') # pylint: disable=C0301
+dont_allow_btn_loc = (By.XPATH, '//span[contains(text(), "Showing")]/../../../../../../../..//div[contains(@aria-label, "Allow")]|//span[text()="Hide"]|//span[text()="Undo"]') # pylint: disable=C0301
+back_btn_loc = (By.XPATH, '//span[contains(text(),"Website, App") or contains(text(),"List ")]/../../../..//div[@aria-label="Back"]') # pylint: disable=C0301
+back_tolist_btn_loc = (By.XPATH, '//div[@aria-label="Back"]') # pylint: disable=C0301
 
 
 class RemoveAdlist:
@@ -53,7 +54,7 @@ class RemoveAdlist:
             return elem[ordinal]
 
     def wait_clickable(self, elem_loc):
-        return WebDriverWait(self.driver, TIMEOUT_ELE).until(\
+        return WebDriverWait(self.driver, TIMEOUT_CLICKABLE).until(\
             EC.element_to_be_clickable(elem_loc))
 
     def prepare_adlist(self):
@@ -81,7 +82,7 @@ class RemoveAdlist:
             self.wait_clickable(list_usage_btn_loc).click()
             button = self.wait_clickable(dont_allow_btn_loc)
             log_step(f"[{counter}] {business_name}. Button is '{button.text}'\n")
-            if button.text == "Don't Allow":
+            if button.text == "Don't Allow" or button.text == 'Hide':
                 button.click()
                 remove_list.append(business_name)
             self.wait_clickable(back_btn_loc).click()
