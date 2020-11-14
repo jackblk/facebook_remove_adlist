@@ -8,6 +8,7 @@ from selenium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
+from selenium.webdriver.common.action_chains import ActionChains
 
 #Global vars
 TIMEOUT = 10 #sec
@@ -22,27 +23,22 @@ TIMEOUT_LOGIN = 3 #sec
 #Config
 chromeProfile_dir = '--user-data-dir=' + os.path.dirname(os.path.realpath(__file__)) \
                     + os.path.sep +'/ChromeProfile'
-FB_URL = 'https://www.facebook.com/adpreferences/ad_settings'
+FB_URL = 'https://www.facebook.com/'
 
 # ============================
 # Locators
-audience_based_loc = (By.XPATH, '//span[text()="Audience-based advertising"]')
-see_all_business_loc = (By.XPATH, '//div[@aria-label="See All Businesses"]')
-
-businesses_loc = (By.XPATH, '//*[local-name() = "svg"][@class="pzggbiyp"]/../../../../../div[@tabindex="0"]') # pylint: disable=C0301
-list_usage_btn_loc = (By.XPATH, '//span[text()="They uploaded or used a list to reach you."]')
-dont_allow_btn_loc = (By.XPATH, '//span[text()="Showing ads to you using a list"]/../../../../../../../..//div[contains(@aria-label, "Allow")]') # pylint: disable=C0301
-back_btn_loc = (By.XPATH, '//span[text()="List usage"]/../../../..//div[@aria-label="Back"]')
-back_tolist_btn_loc = (By.XPATH, '//span[text()="They uploaded or used a list to reach you."]/../../../../../../../../../..//div[@aria-label="Back"]') # pylint: disable=C0301
-
+sponsored_post_menu =  '//a[@aria-label="Sponsored"]/../../../../../..//div[@aria-haspopup]'
+hide_ad_btn = (By.XPATH, '//span[text()="Hide ad"]')
+irre_btn = (By.XPATH, '//span[text()="Irrelevant"]')
+done_btn = (By.XPATH, '//div[@aria-label="Done"]')
+hide_all_ads_from_btn = (By.XPATH, '//span[contains(text(), "Hide all ads from")]')
 
 class RemoveAdlist:
     def __init__(self, url, setup=False):
         self.url = url
         self.setup = setup
         self.driver = init_chrome()
-        self.list_business_elem = None
-        self.list_business_name = None
+        self.failure = 0
 
     def get_element_visible(self, elem_loc, ordinal=0):
         elem = WebDriverWait(self.driver, TIMEOUT_ELE).until(\
@@ -56,37 +52,46 @@ class RemoveAdlist:
         return WebDriverWait(self.driver, TIMEOUT_ELE).until(\
             EC.element_to_be_clickable(elem_loc))
 
-    def prepare_adlist(self):
+    def go_to_bottom(self):
+        self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+
+    def scroll_to_view(self, elem):
+        self.driver.execute_script("arguments[0].scrollIntoView();", elem)
+
+    def _hide_ad(self):
+        self.get_element_visible(hide_ad_btn).click()
+        self.get_element_visible(irre_btn).click()
+        self.get_element_visible(done_btn).click()
+        self.get_element_visible(hide_all_ads_from_btn).click()
+        self.get_element_visible(done_btn).click()
+        print(f"Hid ad!")
+
+    def load_newsfeed(self):
         self.driver.get(self.url)
         if self.setup:
             time.sleep(300) # wait for 5 mins then do absolutely nothing
             sys.exit()
-        self.wait_clickable(audience_based_loc).click()
-        self.wait_clickable(see_all_business_loc).click()
-        WebDriverWait(self.driver, 5).until(\
-            EC.invisibility_of_element_located(see_all_business_loc))
-        self.list_business_elem = self.get_element_visible(businesses_loc, 'list')
-        self.list_business_name = [x.text for x in self.list_business_elem]
+        self.go_to_bottom()
+        time.sleep(1)
+        print("Done loading newsfeed.")
 
-    def remove_adlist(self):
-        remove_list = []
-        for counter, business_elem in enumerate(self.list_business_elem, 0):
-            business_name = self.list_business_name[counter]
-            business_elem.location_once_scrolled_into_view # pylint: disable=W0104
-            try:
-                business_elem.click()
-            except: # pylint: disable=W0702
-                time.sleep(1)
-                business_elem.click()
-            self.wait_clickable(list_usage_btn_loc).click()
-            button = self.wait_clickable(dont_allow_btn_loc)
-            log_step(f"[{counter}] {business_name}. Button is '{button.text}'\n")
-            if button.text == "Don't Allow":
-                button.click()
-                remove_list.append(business_name)
-            self.wait_clickable(back_btn_loc).click()
-            self.wait_clickable(back_tolist_btn_loc).click()
-        log_step(f"\nRemoved {len(remove_list)}: {remove_list}")
+    def refresh(self):
+        self.driver.refresh()
+
+    def hide_all_sponsored(self):
+        ad_list = self.driver.find_elements_by_xpath(sponsored_post_menu)
+        try:
+            ad_menu_btn = ad_list[0]
+        except IndexError:
+            self.failure += 1
+            if self.failure >= 3:
+                raise Exception
+            return
+        self.scroll_to_view(ad_menu_btn)
+        time.sleep(0.5)
+        ad_menu_btn.click()
+        self._hide_ad()
+        time.sleep(2)
 
     def quit(self):
         self.driver.close()
@@ -105,11 +110,11 @@ def init_chrome(headless=False):
     chrome_options.add_argument('--disable-notifications')
     chrome_options.add_argument(chromeProfile_dir)
     chrome_options.add_argument('--remote-debugging-port=9222')
-    # chrome_options.add_argument('--window-size=1440, 1080')
     prefs = {"profile.managed_default_content_settings.images": 2,}
     chrome_options.add_experimental_option("prefs", prefs)
 
     driver = webdriver.Chrome(options=chrome_options)
+    driver.set_window_size(700,800)
     driver.set_page_load_timeout(TIMEOUT)
     return driver
 
@@ -124,14 +129,20 @@ def log_step(step):
 
 if __name__ == "__main__":
     # os.environ["PATH"] += PATH + "driver"
+    AD_NUM = 2
     if len(sys.argv) >= 2:
-        if sys.argv[1] == "debug":
+        if sys.argv[1].lower() == "debug":
             SETUP = True
+        if sys.argv[1].lower() == "load":
+            AD_NUM = int(sys.argv[2])
     log_step(chromeProfile_dir)
     fb = RemoveAdlist(FB_URL, SETUP)
     try:
-        fb.prepare_adlist()
-        fb.remove_adlist()
-    except Exception as error:
-        error_log(error)
+        for counter in range(AD_NUM):
+            log_step(f"Load newsfeed the {counter + 1} time.")
+            fb.load_newsfeed()
+            fb.hide_all_sponsored()
+            fb.refresh()
+    except Exception as er_log:
+        error_log(er_log)
     fb.quit()
