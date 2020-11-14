@@ -1,6 +1,9 @@
 # chrome profile
 ChromeProfile/
 
+# neovim
+.nvimlog
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
