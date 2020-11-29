@@ -1,6 +1,5 @@
 # chrome profile
-ChromeProfile/
-ChromeProfile1/
+ChromeProfile*/
 
 # neovim
 .nvimlog
