@@ -39,6 +39,7 @@ class RemoveAdlist:
         self.setup = setup
         self.driver = init_chrome()
         self.failure = 0
+        self.ads_hidden = 0
 
     def get_element_visible(self, elem_loc, ordinal=0):
         elem = WebDriverWait(self.driver, TIMEOUT_ELE).until(\
@@ -64,6 +65,8 @@ class RemoveAdlist:
         self.get_element_visible(done_btn).click()
         self.get_element_visible(hide_all_ads_from_btn).click()
         self.get_element_visible(done_btn).click()
+        self.failure = 0 # reset counter
+        self.ads_hidden += 1
         print(f"Hid ad!")
 
     def load_newsfeed(self):
@@ -85,9 +88,9 @@ class RemoveAdlist:
         except IndexError:
             self.failure += 1
             if self.failure >= 3:
-                raise Exception
+                raise Exception("Failed more than 3 times, maybe no more ads?")
             return
-        self.scroll_to_view(ad_menu_btn)
+        # self.scroll_to_view(ad_menu_btn)
         time.sleep(0.5)
         ad_menu_btn.click()
         self._hide_ad()
@@ -145,4 +148,5 @@ if __name__ == "__main__":
             fb.refresh()
     except Exception as er_log:
         error_log(er_log)
+    log_step(f"Hid total of {fb.ads_hidden}.")
     fb.quit()
