@@ -60,11 +60,11 @@ class RemoveAdlist:
         self.driver.execute_script("arguments[0].scrollIntoView();", elem)
 
     def _hide_ad(self):
-        self.get_element_visible(hide_ad_btn).click()
-        self.get_element_visible(irre_btn).click()
-        self.get_element_visible(done_btn).click()
-        self.get_element_visible(hide_all_ads_from_btn).click()
-        self.get_element_visible(done_btn).click()
+        self.wait_clickable(hide_ad_btn).click()
+        self.wait_clickable(irre_btn).click()
+        self.wait_clickable(done_btn).click()
+        self.wait_clickable(hide_all_ads_from_btn).click()
+        self.wait_clickable(done_btn).click()
         self.failure = 0 # reset counter
         self.ads_hidden += 1
         print(f"Hid ad!")
@@ -117,7 +117,7 @@ def init_chrome(headless=False):
     chrome_options.add_experimental_option("prefs", prefs)
 
     driver = webdriver.Chrome(options=chrome_options)
-    driver.set_window_size(700,800)
+    driver.set_window_size(700,900)
     driver.set_page_load_timeout(TIMEOUT)
     return driver
 
