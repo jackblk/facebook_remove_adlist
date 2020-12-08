@@ -5,6 +5,7 @@ import os
 import time
 import sys
 from selenium import webdriver
+from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
@@ -44,6 +45,7 @@ class RemoveAdlist:
         self.driver = init_chrome()
         self.list_business_elem = None
         self.list_business_name = None
+        self.progress = 0
 
     def get_element_visible(self, elem_loc, ordinal=0):
         elem = WebDriverWait(self.driver, TIMEOUT_ELE).until(\
@@ -71,18 +73,22 @@ class RemoveAdlist:
 
     def remove_adlist(self):
         remove_list = []
-        for counter, business_elem in enumerate(self.list_business_elem, 0):
-            business_name = self.list_business_name[counter]
+        for business_elem in self.list_business_elem:
+            if self.progress >= len(self.list_business_elem):
+                break
+            business_name = self.list_business_name[self.progress]
+            self.progress += 1
+            business_elem: WebElement
             business_elem.location_once_scrolled_into_view # pylint: disable=W0104
             try:
                 business_elem.click()
             except: # pylint: disable=W0702
-                time.sleep(1)
+                time.sleep(2)
                 business_elem.click()
             self.wait_clickable(list_usage_btn_loc).click()
             button = self.wait_clickable(dont_allow_btn_loc)
-            log_step(f"[{counter}] {business_name}. Button is '{button.text}'\n")
-            if button.text == "Don't Allow" or button.text == 'Hide':
+            log_step(f"[{self.progress}] {business_name}. Button is '{button.text}'\n")
+            if button.text.lower() in ("don't allow", "hide"):
                 button.click()
                 remove_list.append(business_name)
             self.wait_clickable(back_btn_loc).click()
@@ -125,13 +131,17 @@ def log_step(step):
 
 if __name__ == "__main__":
     # os.environ["PATH"] += PATH + "driver"
+    SKIP_ADLIST = 0
     if len(sys.argv) >= 2:
         if sys.argv[1] == "debug":
             SETUP = True
+        if sys.argv[1].lower() == "skip":
+            SKIP_ADLIST = int(sys.argv[2])
     log_step(chromeProfile_dir)
     fb = RemoveAdlist(FB_URL, SETUP)
     try:
         fb.prepare_adlist()
+        fb.progress = SKIP_ADLIST
         fb.remove_adlist()
     except Exception as error:
         error_log(error)
