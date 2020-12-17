@@ -12,7 +12,7 @@ from selenium.webdriver.common.action_chains import ActionChains
 from selenium.common.exceptions import NoSuchElementException, TimeoutException
 
 #Global vars
-TIMEOUT = 10 #sec
+TIMEOUT = 20 #sec
 TIMEOUT_ELE = 15 #sec
 TIMEOUT_DONT_ALLOW = 3 #sec
 PATH = os.path.sep + os.path.dirname(os.path.realpath(__file__)) + os.path.sep
