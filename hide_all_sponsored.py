@@ -8,7 +8,6 @@ from selenium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
-from selenium.webdriver.common.action_chains import ActionChains
 
 #Global vars
 TIMEOUT = 10 #sec
@@ -16,6 +15,7 @@ TIMEOUT_ELE = 15 #sec
 TIMEOUT_DONT_ALLOW = 3 #sec
 PATH = os.path.sep + os.path.dirname(os.path.realpath(__file__)) + os.path.sep
 SETUP = False
+FAILURE_LIMIT = 5
 # Login info
 LOGIN_CONFIG = False
 TIMEOUT_LOGIN = 3 #sec
@@ -67,7 +67,7 @@ class RemoveAdlist:
         self.wait_clickable(done_btn).click()
         self.failure = 0 # reset counter
         self.ads_hidden += 1
-        print(f"Hid ad!")
+        print("Hid ad!")
 
     def load_newsfeed(self):
         self.driver.get(self.url)
@@ -87,8 +87,8 @@ class RemoveAdlist:
             ad_menu_btn = ad_list[0]
         except IndexError:
             self.failure += 1
-            if self.failure >= 3:
-                raise Exception("Failed more than 3 times, maybe no more ads?")
+            if self.failure >= FAILURE_LIMIT:
+                raise Exception(f"Failed more than {FAILURE_LIMIT} times, maybe no more ads?")
             return
         # self.scroll_to_view(ad_menu_btn)
         time.sleep(0.5)
