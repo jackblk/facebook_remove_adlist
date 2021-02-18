@@ -27,7 +27,7 @@ FB_URL = 'https://www.facebook.com/'
 
 # ============================
 # Locators
-sponsored_post_menu =  '//a/span/span[count(./span) > 25][text()="S"]/../../../../../../../..//div[@aria-haspopup]'
+sponsored_post_menu =  '//a/span/span[count(./span) > 25]/../../../../../../../..//div[@aria-haspopup]'
 hide_ad_btn = (By.XPATH, '//span[text()="Hide ad"]')
 irre_btn = (By.XPATH, '//span[text()="Irrelevant"]')
 done_btn = (By.XPATH, '//div[@aria-label="Done"]')
