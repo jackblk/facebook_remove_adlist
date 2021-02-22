@@ -4,10 +4,14 @@
 import os
 import time
 import sys
+import pretty_errors
 from selenium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.common.by import By
+
+pretty_errors.replace_stderr()
 
 #Global vars
 TIMEOUT = 10 #sec
@@ -27,7 +31,9 @@ FB_URL = 'https://www.facebook.com/'
 
 # ============================
 # Locators
-sponsored_post_menu =  '//a/span/span[count(./span) > 25]/../../../../../../../..//div[@aria-haspopup]'
+sponsored_post_menu_win =  '//a/span/span[count(./span) > 25]/../../../../../../../..//div[@aria-haspopup]'
+sponsored_post_menu_linux =  '//a/span/b[count(./b) > 25]/../../../../../../../..//div[@aria-haspopup]'
+sponsored_post_menu = sponsored_post_menu_linux + '|' + sponsored_post_menu_win
 hide_ad_btn = (By.XPATH, '//span[text()="Hide ad"]')
 irre_btn = (By.XPATH, '//span[text()="Irrelevant"]')
 done_btn = (By.XPATH, '//div[@aria-label="Done"]')
@@ -41,8 +47,8 @@ class RemoveAdlist:
         self.failure = 0
         self.ads_hidden = 0
 
-    def get_element_visible(self, elem_loc, ordinal=0):
-        elem = WebDriverWait(self.driver, TIMEOUT_ELE).until(\
+    def get_element_visible(self, elem_loc, ordinal=0, timeout = TIMEOUT_ELE):
+        elem = WebDriverWait(self.driver, timeout).until(\
             EC.visibility_of_all_elements_located(elem_loc))
         if ordinal == 'list':
             return elem
@@ -76,16 +82,22 @@ class RemoveAdlist:
             sys.exit()
         self.go_to_bottom()
         time.sleep(1)
+        for _ in range(4):    
+            try:
+                self.get_element_visible((By.XPATH, sponsored_post_menu), timeout = 1)
+                break
+            except TimeoutException:
+                self.go_to_bottom()
+                time.sleep(1)
         print("Done loading newsfeed.")
 
     def refresh(self):
         self.driver.refresh()
 
     def hide_all_sponsored(self):
-        ad_list = self.driver.find_elements_by_xpath(sponsored_post_menu)
         try:
-            ad_menu_btn = ad_list[0]
-        except IndexError:
+            ad_menu_btn = self.get_element_visible((By.XPATH, sponsored_post_menu), timeout = 1)
+        except TimeoutException:
             self.failure += 1
             if self.failure >= FAILURE_LIMIT:
                 raise Exception(f"Failed more than {FAILURE_LIMIT} times, maybe no more ads?")
@@ -146,7 +158,9 @@ if __name__ == "__main__":
             fb.load_newsfeed()
             fb.hide_all_sponsored()
             fb.refresh()
+        fb.quit()
+        log_step(f"Hid total of {fb.ads_hidden}.")
     except Exception as er_log:
+        fb.quit()
         error_log(er_log)
-    log_step(f"Hid total of {fb.ads_hidden}.")
-    fb.quit()
+        raise Exception(er_log)
