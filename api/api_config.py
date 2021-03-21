@@ -63,9 +63,10 @@ class Fbook:
             str: fb_dtsg string
         """
         response = requests.get(
-            "https://www.facebook.com/", headers=HEADERS, cookies=self.cookies
+            "https://m.facebook.com/", headers=HEADERS, cookies=self.cookies
         )
-        regex = r'DTSGInitialData",\[\],{"token":"([\d\w:]+)"'
+        # regex = r'DTSGInitialData",\[\],{"token":"([\d\w:]+)"'  # getting in script tag
+        regex = r'name="fb_dtsg" value="([\d\w:]+)"'
         fb_dtsg = re.search(regex, response.content.decode(), re.S | re.M).group(1)
         return fb_dtsg
 
@@ -116,7 +117,7 @@ class Fbook:
         )
         result = response.json()
         try:
-            if result["data"]["advertiser_hide"]["advertiser"]["is_hidden"] == True:
+            if result["data"]["advertiser_hide"]["advertiser"]["is_hidden"] is True:
                 return True
         except IndexError:
             print("Response is: ", result)
