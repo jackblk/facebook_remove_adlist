@@ -1,8 +1,8 @@
 import sys
 from rich import print  # pylint: disable=redefined-builtin
 
-from api.api_config import Fbook
-from api.api_config import load_cookies
+from api.fbook import Fbook
+from api.fbook import load_cookies
 
 print("Loading cookies from environment variable.")
 COOKIES = load_cookies()
