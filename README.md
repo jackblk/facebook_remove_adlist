@@ -14,3 +14,19 @@ Setting up correctly will help you to create a folder `ChromeProfile` with logge
 ## Run
 `python adlist_remove.py`
 Let it do its job :).
+
+
+--------
+
+## Removing via FB API (No UI)
+
+WIP, will replace UI version later.
+
+### Setting up
+Create a file `.env` in this folder, copy your Facebook cookies from browser to this file:
+```
+COOKIES="your_cookies"
+```
+Or you can set it to enviroment variable `COOKIES` from your OS (not recommended).
+
+Run `python del_via_api.py`
