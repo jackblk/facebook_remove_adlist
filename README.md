@@ -30,3 +30,5 @@ COOKIES="your_cookies"
 Or you can set it to enviroment variable `COOKIES` from your OS (not recommended).
 
 Run `python del_via_api.py`
+
+You can check the result here: [Advertisers](https://www.facebook.com/adpreferences/advertisers)
