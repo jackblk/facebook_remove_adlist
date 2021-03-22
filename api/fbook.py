@@ -165,6 +165,7 @@ class Fbook:
             ad_business
             for ad_business in result
             if ad_business["dfca_inclusion_opted_out"] is False
+            and ad_business["business_id"] is not None
         ]
         return parsed_result
 
