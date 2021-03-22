@@ -27,6 +27,7 @@ HEADERS = {
     "Sec-Fetch-Dest": "document",
     "Accept-Language": "en-US,en;q=0.9,vi;q=0.8",
 }
+GRAPHQL_API_URL = "https://www.facebook.com/api/graphql/"
 
 
 def load_cookies() -> dict:
@@ -52,18 +53,19 @@ class Fbook:
     """
 
     def __init__(self, cookies) -> None:
+        self.headers = HEADERS
         self.cookies = cookies
         self.user_id = cookies["c_user"]
         self.dtsg = self.get_dtsg()
 
     def get_dtsg(self) -> str:
-        """Get fb_dtsg from cookies
+        """Get fb_dtsg from cookies via API
 
         Returns:
             str: fb_dtsg string
         """
         response = requests.get(
-            "https://m.facebook.com/", headers=HEADERS, cookies=self.cookies
+            "https://m.facebook.com/", headers=self.headers, cookies=self.cookies
         )
         # regex = r'DTSGInitialData",\[\],{"token":"([\d\w:]+)"'  # getting in script tag
         regex = r'name="fb_dtsg" value="([\d\w:]+)"'
@@ -78,7 +80,7 @@ class Fbook:
         """
         response = requests.get(
             "https://www.facebook.com/adpreferences/advertisers",
-            headers=HEADERS,
+            headers=self.headers,
             cookies=self.cookies,
         )
         regex = r"tc_seen_advertisers(.*)tc_hidden_advertiser"
@@ -110,8 +112,8 @@ class Fbook:
         }
 
         response = requests.post(
-            "https://www.facebook.com/api/graphql/",
-            headers=HEADERS,
+            GRAPHQL_API_URL,
+            headers=self.headers,
             cookies=self.cookies,
             data=data,
         )
@@ -119,6 +121,89 @@ class Fbook:
         try:
             if result["data"]["advertiser_hide"]["advertiser"]["is_hidden"] is True:
                 return True
+            return False
         except IndexError:
-            print("Response is: ", result)
+            print("Failed to hide. Response is: ", result)
+            return False
+
+    def get_business_adlist(self, no_filter: bool = False) -> list:
+        """Get a list of businesses that uploaded adlist about you.
+
+        Will only return businesses that you have not Opt-out of adlist yet.
+        Use `no_filter=True` for a full list.
+
+        Args:
+            no_filter (bool, optional): will return full list if True. Defaults to False.
+
+        Returns:
+            list: list of businesses that uploaded adlist about you.
+        """
+        data = {
+            "av": self.user_id,
+            "__user": self.user_id,
+            "fb_dtsg": self.dtsg,
+            "fb_api_caller_class": "RelayModern",
+            "fb_api_req_friendly_name": "AdPreferencesListBasedLandingPageQuery",
+            "variables": "{}",
+            "server_timestamps": "true",
+            "doc_id": "3226537680809256",
+        }
+        response = requests.post(
+            GRAPHQL_API_URL,
+            headers=self.headers,
+            cookies=self.cookies,
+            data=data,
+        )
+        result = response.json()["data"]["tc_businesses_with_ca"]
+        if no_filter is True:
+            return result
+        parsed_result = [
+            ad_business
+            for ad_business in result
+            if ad_business["dfca_inclusion_opted_out"] is False
+        ]
+        return parsed_result
+
+    def opt_out_business(self, business_id) -> bool:
+        """Opt out of a business adlist.
+
+        Args:
+            business_id (str): business id to opt out.
+
+        Returns:
+            bool: opt out status
+        """
+        variables = {
+            "input": {
+                "client_mutation_id": "2",
+                "actor_id": self.user_id,
+                "business_id": business_id,
+                "operation": "DONT_ALLOW",
+                "type": "INCLUSION",
+            }
+        }
+        data = {
+            "av": self.user_id,
+            "__user": self.user_id,
+            "fb_dtsg": self.dtsg,
+            "fb_api_caller_class": "RelayModern",
+            "fb_api_req_friendly_name": "AdPreferencesDFCABusinessOptOutMutation",
+            "variables": json.dumps(variables),
+            "server_timestamps": "true",
+            "doc_id": "2693764404041988",
+        }
+        response = requests.post(
+            GRAPHQL_API_URL,
+            headers=self.headers,
+            cookies=self.cookies,
+            data=data,
+        )
+        result = response.json()
+        try:
+            id_ = result["data"]["update_dfca_optout"]["business_info"]["id"]
+            if id_ == "eyJ0eXBlIjoiVENCdXNpbmVzc0lEIiwiYmlkIjpudWxsLCJwaWQiOm51bGx9":
+                print(f"'{business_id}' is not a valid id (response null).")
+            return True
+        except IndexError:
+            print("Something went wrong. Response: \n", result)
             return False
