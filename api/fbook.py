@@ -69,7 +69,11 @@ class Fbook:
         )
         # regex = r'DTSGInitialData",\[\],{"token":"([\d\w:]+)"'  # getting in script tag
         regex = r'name="fb_dtsg" value="([\d\w:]+)"'
-        fb_dtsg = re.search(regex, response.content.decode(), re.S | re.M).group(1)
+        try:
+            fb_dtsg = re.search(regex, response.content.decode(), re.S | re.M).group(1)
+        except AttributeError:
+            print("Error getting DTSG, retry once.")
+            fb_dtsg = re.search(regex, response.content.decode(), re.S | re.M).group(1)
         return fb_dtsg
 
     def get_advertiser_list(self) -> list:
@@ -207,3 +211,60 @@ class Fbook:
         except IndexError:
             print("Something went wrong. Response: \n", result)
             return False
+
+    def get_interest_list(self) -> list:
+        """Get interest list from user
+
+        Returns:
+            list: list of interests
+        """
+        data = {
+            "av": self.user_id,
+            "__user": self.user_id,
+            "fb_dtsg": self.dtsg,
+            "fb_api_caller_class": "RelayModern",
+            "fb_api_req_friendly_name": "AdPreferencesInterestCategoriesPageQuery",
+            "variables": "{}",
+            "server_timestamps": "true",
+            "doc_id": "2916949545027630",
+        }
+        response = requests.post(
+            GRAPHQL_API_URL,
+            headers=self.headers,
+            cookies=self.cookies,
+            data=data,
+        )
+        result = response.json()["data"]["tc_user_interests"]
+        return result
+
+    def remove_interest(self, interest_id) -> bool:
+        """Remove interest of ad preference
+
+        Args:
+            interest_id (str): interest id
+
+        Returns:
+            bool: status of removing
+        """
+        variables = {"interestID": interest_id, "isUndo": False}
+        data = {
+            "av": self.user_id,
+            "__user": self.user_id,
+            "fb_dtsg": self.dtsg,
+            "fb_api_caller_class": "RelayModern",
+            "fb_api_req_friendly_name": "AdPreferencesInterestCategoryOptOutMutation",
+            "variables": json.dumps(variables),
+            "server_timestamps": "true",
+            "doc_id": "3765701203502096",
+        }
+        response = requests.post(
+            GRAPHQL_API_URL,
+            headers=self.headers,
+            cookies=self.cookies,
+            data=data,
+        )
+        result = response.json()
+        if "errors" in result["data"]:
+            print("Something went wrong. Response: \n", result)
+            return False
+        return True

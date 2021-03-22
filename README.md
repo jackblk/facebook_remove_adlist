@@ -28,7 +28,7 @@ Or you can set it to enviroment variable `COOKIES` from your OS (not recommended
 Run `python del_advertisers.py`
 
 You can check the result here: [Advertisers](https://www.facebook.com/adpreferences/advertisers)
-### Opt out from business adlist
-Run `python opt_out_business_adlist.py`
+### Opt out from business adlist & removing interests
+Run `python opt_out_business_adlist.py` and `python remove_interest.py`
 
-Check the result here: [Ad settings](https://www.facebook.com/adpreferences/ad_settings), Audience-based advertising.
+Check the result here: [Ad settings](https://www.facebook.com/adpreferences/ad_settings), Audience-based advertising & Interest categories.
