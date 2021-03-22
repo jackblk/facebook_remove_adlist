@@ -14,6 +14,9 @@ if __name__ == "__main__":
     for business in business_adlist:
         name_ = business["name"]
         id_ = business["business_id"]
+        if id_ is None:
+            print(f"Business '{name_}' with id '{id_}' does not have adlist. Skipping.")
+            continue
         print(f"Opting out business '{name_}' with id '{id_}'.", end="")
         STATUS = fb.opt_out_business(business["business_id"])
         print(f" Status: {STATUS}.")
