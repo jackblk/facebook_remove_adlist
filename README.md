@@ -17,6 +17,12 @@ That means, you will not see any ads for a long time (2-3 months), **then they w
 
 This is my experience using this method for **more than 3 years** and it has been working perfectly for me, but it **might not work for you**.
 
+### Install dependencies
+
+Python version: >=3.6
+
+`python -m pip install -r requirements.txt`
+
 ### Setting up
 Create a file `.env` in this folder, copy your Facebook cookies from browser to this file:
 ```
