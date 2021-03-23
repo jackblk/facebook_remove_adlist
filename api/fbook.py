@@ -12,6 +12,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
+RETRY = 3
 HEADERS = {
     "Connection": "keep-alive",
     "sec-ch-ua": '"Google Chrome";v="89", "Chromium";v="89", ";Not A Brand";v="99"',
@@ -64,17 +65,21 @@ class Fbook:
         Returns:
             str: fb_dtsg string
         """
-        response = requests.get(
-            "https://m.facebook.com/", headers=self.headers, cookies=self.cookies
-        )
         # regex = r'DTSGInitialData",\[\],{"token":"([\d\w:]+)"'  # getting in script tag
         regex = r'name="fb_dtsg" value="([\d\w:]+)"'
-        try:
-            fb_dtsg = re.search(regex, response.content.decode(), re.S | re.M).group(1)
-        except AttributeError:
-            print("Error getting DTSG, retry once.")
-            fb_dtsg = re.search(regex, response.content.decode(), re.S | re.M).group(1)
-        return fb_dtsg
+        for retry_ in range(RETRY):
+            response = requests.get(
+                "https://m.facebook.com/", headers=self.headers, cookies=self.cookies
+            )
+            fb_dtsg = re.search(regex, response.content.decode(), re.S | re.M)
+            if fb_dtsg is None:
+                print(f"Error getting DTSG, retry {retry_+1}.")
+                continue
+            else:
+                break
+        if fb_dtsg is None:
+            raise Exception(f"Cannot get DTSG after {RETRY} tries.")
+        return fb_dtsg.group(1)
 
     def get_advertiser_list(self) -> list:
         """Get "seen_advertisers" list
@@ -111,6 +116,8 @@ class Fbook:
         }
         data = {
             "fb_dtsg": self.dtsg,
+            "fb_api_caller_class": "RelayModern",
+            "fb_api_req_friendly_name": "AdPreferencesHideAdvertiserMutation",
             "variables": json.dumps(variables),
             "doc_id": "3717265144980552",
         }
