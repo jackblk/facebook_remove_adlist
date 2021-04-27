@@ -66,6 +66,7 @@ class Fbook:
             str: fb_dtsg string
         """
         regex = r"fb_dtsg\\\" value=\\\"([\d\w:]+)\\\""
+        fb_dtsg = None
         for retry_ in range(RETRY):
             response = requests.get(
                 "https://m.facebook.com/composer/ocelot/async_loader/?publisher=feed",
