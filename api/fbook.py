@@ -37,7 +37,7 @@ def load_cookies() -> dict:
     Returns:
         dict: dict of cookies
     """
-    raw_cookie = os.getenv("COOKIES")
+    raw_cookie = os.getenv("FB_COOKIES")
     if raw_cookie is None:
         raise ValueError("No cookies set in Env Var.")
     cookie = SimpleCookie()
@@ -65,21 +65,15 @@ class Fbook:
         Returns:
             str: fb_dtsg string
         """
-        regex = r"fb_dtsg\\\" value=\\\"([\d\w:]+)\\\""
-        fb_dtsg = None
-        for retry_ in range(RETRY):
-            response = requests.get(
-                "https://m.facebook.com/composer/ocelot/async_loader/?publisher=feed",
-                headers=self.headers,
-                cookies=self.cookies,
-            )
-            fb_dtsg = re.search(regex, response.content.decode(), re.S | re.M)
-            if fb_dtsg is None:
-                print(f"Error getting DTSG, retry {retry_+1}.")
-                continue
-            break
-        if fb_dtsg is None:
-            raise Exception(f"Cannot get DTSG after {RETRY} tries.")
+        regex = r"fb_dtsg\\\" value=\\\"([\d\w:-]+)\\\""
+        response = requests.get(
+            "https://m.facebook.com/composer/ocelot/async_loader/?publisher=feed",
+            headers=self.headers,
+            cookies=self.cookies,
+        )
+        if "Set-Cookie" in response.headers:
+            raise Exception("Cookie is invalid.")
+        fb_dtsg = re.search(regex, response.content.decode(), re.S | re.M)
         return fb_dtsg.group(1)
 
     def get_advertiser_list(self) -> list:
