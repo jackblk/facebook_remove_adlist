@@ -1,4 +1,4 @@
-# selenium>=3.141.0
-python-dotenv
-requests
-rich
+click==8.0.1
+python-dotenv==0.17.1
+requests==2.25.1
+rich==10.3.0

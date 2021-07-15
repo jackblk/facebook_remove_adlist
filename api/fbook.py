@@ -4,22 +4,24 @@ Facebook API helper
 import os
 import re
 import json
+import logging
 from http.cookies import SimpleCookie
 
 import requests
 from dotenv import load_dotenv
+from rich.logging import RichHandler
 
-load_dotenv()
-
+logging.basicConfig(level=logging.INFO, handlers=[RichHandler()])
+log = logging.getLogger(__name__)
 
 RETRY = 3
 HEADERS = {
     "Connection": "keep-alive",
-    "sec-ch-ua": '"Google Chrome";v="89", "Chromium";v="89", ";Not A Brand";v="99"',
+    "sec-ch-ua": '" Not;A Brand";v="99", "Google Chrome";v="91", "Chromium";v="91"',
     "DNT": "1",
     "Upgrade-Insecure-Requests": "1",
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-    + "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.90 Safari/537.36",
+    + "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,"
     + "image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9",
     "Sec-Fetch-Site": "same-origin",
@@ -31,12 +33,17 @@ HEADERS = {
 GRAPHQL_API_URL = "https://www.facebook.com/api/graphql/"
 
 
-def load_cookies() -> dict:
+def load_cookies(env_file: bool = False) -> dict:
     """Load cookies from environment variable
+
+    Args:
+        env_file (bool): override env var using env file
 
     Returns:
         dict: dict of cookies
     """
+    log.info(f"Override from env file: {env_file}")
+    load_dotenv(override=env_file)
     raw_cookie = os.getenv("FB_COOKIES")
     if raw_cookie is None:
         raise ValueError("No cookies set in Env Var.")
@@ -56,8 +63,8 @@ class Fbook:
     def __init__(self, cookies) -> None:
         self.headers = HEADERS
         self.cookies = cookies
-        self.user_id = cookies["c_user"]
-        self.dtsg = self.get_dtsg()
+        self.user_id: str = cookies["c_user"]
+        self.dtsg: str = self.get_dtsg()
 
     def get_dtsg(self) -> str:
         """Get fb_dtsg from cookies via API
@@ -74,6 +81,9 @@ class Fbook:
         if "Set-Cookie" in response.headers:
             raise Exception("Cookie is invalid.")
         fb_dtsg = re.search(regex, response.content.decode(), re.S | re.M)
+        if fb_dtsg is None:
+            log.error("Cannot get DTSG")
+            raise TypeError
         return fb_dtsg.group(1)
 
     def get_advertiser_list(self) -> list:
@@ -88,8 +98,12 @@ class Fbook:
             cookies=self.cookies,
         )
         regex = r"tc_seen_advertisers(.*)tc_hidden_advertiser"
-        parsed = re.search(regex, response.content.decode(), re.S | re.M).group(1)
-        json_data = json.loads(parsed[slice(2, -2)])  # remove unecessary strings
+        result = re.search(regex, response.content.decode(), re.S | re.M)
+        if result is None:
+            log.error("Cannot find advertisers.")
+            raise TypeError
+        parsed = result.group(1)[slice(2, -2)]
+        json_data = json.loads(parsed)  # remove unecessary strings
         return json_data
 
     def hide_advertiser(self, page_id) -> bool:
@@ -129,7 +143,7 @@ class Fbook:
                 return True
             return False
         except IndexError:
-            print("Failed to hide. Response is: ", result)
+            log.error(f"Failed to hide. Response is: '{result}'")
             return False
 
     def get_business_adlist(self, no_filter: bool = False) -> list:
@@ -171,7 +185,7 @@ class Fbook:
         ]
         return parsed_result
 
-    def opt_out_business(self, business_id) -> bool:
+    def opt_out_business(self, business_id: str) -> bool:
         """Opt out of a business adlist.
 
         Args:
@@ -209,10 +223,10 @@ class Fbook:
         try:
             id_ = result["data"]["update_dfca_optout"]["business_info"]["id"]
             if id_ == "eyJ0eXBlIjoiVENCdXNpbmVzc0lEIiwiYmlkIjpudWxsLCJwaWQiOm51bGx9":
-                print(f"'{business_id}' is not a valid id (response null).")
+                log.warning(f"'{business_id}' is not a valid id (response null).")
             return True
         except IndexError:
-            print("Something went wrong. Response: \n", result)
+            log.info(f"Something went wrong. Response: \n{result}")
             return False
 
     def get_interest_list(self) -> list:
@@ -268,6 +282,6 @@ class Fbook:
         )
         result = response.json()
         if "errors" in result["data"]:
-            print("Something went wrong. Response: \n", result)
+            log.info(f"Something went wrong. Response: \n{result}")
             return False
         return True
