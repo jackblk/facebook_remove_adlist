@@ -81,7 +81,7 @@ def del_ad(fb_: Fbook, count: int):
         log.info(f"Getting Advertisers list no {counter+1}.")
         ad_list = fb_.get_advertiser_list()
         if len(ad_list) == 0:
-            log.warning("No advertiser found!")
+            log.info("No advertiser found!")
             break
 
         for ad_page in ad_list:

@@ -18,6 +18,21 @@ That means, you will not see any ads for a long time (2-3 months), **then they w
 
 This is my experience using this method for **more than 3 years** and it has been working perfectly for me, but it **might not work for you**.
 
+## Docker
+
+Run using Docker:
+```bash
+# this will run all commands, using local env file
+docker run --rm \
+    --volume "$(pwd)/.env:/app/.env" \
+    -it fb-adlist-remover all
+
+# will run `del-ad` only, with option of loading 10 lists of advertisers, using env from CLI
+docker run --rm \
+    --env "FB_COOKIES=cookies_here" \
+    -it fb-adlist-remover del-ad -c 10
+```
+
 ## Installation
 ### Install dependencies
 
@@ -59,3 +74,21 @@ python fb_adlist.py rm-interest
 ```
 
 Check the result here: [Ad settings](https://www.facebook.com/adpreferences/ad_settings), Audience-based advertising & Interest categories.
+
+## Docker development
+
+### Build
+
+```bash
+docker build --rm \
+    -t ghcr.io/jackblk/fb-adlist-remover:latest \
+    -t jackblk/fb-adlist-remover:latest \
+    .
+```
+
+### Push
+
+```bash
+docker push ghcr.io/jackblk/fb-adlist-remover:latest
+docker push jackblk/fb-adlist-remover:latest
+```
