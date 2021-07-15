@@ -1,3 +1,5 @@
+[![CI](https://github.com/jackblk/facebook_remove_adlist/actions/workflows/ci.yml/badge.svg)](https://github.com/jackblk/facebook_remove_adlist/actions/workflows/ci.yml)
+
 # Facebook adlist remover
 
 Disclaimer: use this repo at your risk.
