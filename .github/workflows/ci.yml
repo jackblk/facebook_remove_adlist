@@ -24,7 +24,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt -r requirements_dev.txt
 
-      - name: lint
+      - name: Lint
         run: |
           python -m black . --check
           find . -type f -not -path "./venv/*" -name "*.py" | xargs python -m pylint
