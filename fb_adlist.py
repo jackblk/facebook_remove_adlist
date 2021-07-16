@@ -66,7 +66,7 @@ def rm_interest(fb_: Fbook):
 @cli.command(help="Delete advertisers")
 @click.pass_obj
 @click.option(
-    "-c", "--count", type=int, default=2, help="Number of advertiser list load"
+    "-c", "--count", type=int, default=10, help="Number of advertiser list to load"
 )
 def del_ad(fb_: Fbook, count: int):
     """Delete advertisers
