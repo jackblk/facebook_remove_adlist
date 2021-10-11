@@ -33,14 +33,30 @@ Python version: >=3.8
 
 `python -m pip install -r requirements.txt`
 
-### Setting up
-Create a file `.env` in this folder, copy your Facebook cookies from browser to this file:
+## Setting up
+
+### For Docker container
+Set Env Var or create a file `.env` in this folder with username/email & [app password](https://www.facebook.com/settings?tab=security&section=per_app_passwords):
+```bash
+FB_EMAIL="email_or_username_here"
+FB_APP_PASSWORD="app_password_here"
+# If no email provided, it will use the FB_COOKIES env
+FB_COOKIES="your_cookies"
+```
+### For manual cookies generation (optional)
+
+To generate this step, use `python get_cookies_manual.py`.
+To do it manually, create a file `.env` in this folder, edit the file with your FB cookies.
+
 ```
 FB_COOKIES="your_cookies"
 ```
-Or you can set it to enviroment variable `FB_COOKIES` from your OS.
+
+Or you can set it to enviroment variables for your OS.
 
 ## Usage
+
+Generate your cookies manually with `python get_cookies_manual.py`
 
 To view all commands & helps, run `python fb_adlist.py`
 

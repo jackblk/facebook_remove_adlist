@@ -5,6 +5,7 @@ import os
 import re
 import json
 import logging
+import hashlib
 from http.cookies import SimpleCookie
 
 import requests
@@ -33,7 +34,7 @@ HEADERS = {
 GRAPHQL_API_URL = "https://www.facebook.com/api/graphql/"
 
 
-def load_cookies(env_file: bool = False) -> dict:
+def load_cookies(env_file_override: bool = False) -> dict:
     """Load cookies from environment variable
 
     Args:
@@ -42,17 +43,107 @@ def load_cookies(env_file: bool = False) -> dict:
     Returns:
         dict: dict of cookies
     """
-    log.info(f"Override from env file: {env_file}")
-    load_dotenv(override=env_file)
-    raw_cookie = os.getenv("FB_COOKIES")
-    if raw_cookie is None:
-        raise ValueError("No cookies set in Env Var.")
+    log.info(f"Override from env file: {env_file_override}")
+    load_dotenv(override=env_file_override)
+
+    if email_ := os.getenv("FB_EMAIL"):
+        log.info("Generating FB cookies from app password")
+        password_ = os.getenv("FB_APP_PASSWORD", "")
+        auth = FbAuth(email_, password_)
+        raw_cookie = auth.get_cookies_string()
+    else:
+        log.info("Getting FB cookies from Env Var")
+        raw_cookie = os.getenv("FB_COOKIES")
+        if raw_cookie is None:
+            raise ValueError("No cookies set in Env Var.")
+
     cookie = SimpleCookie()
     cookie.load(raw_cookie)
     cookies = {}
     for key, morsel in cookie.items():
         cookies[key] = morsel.value
     return cookies
+
+
+# login method from Pidgin plugin https://github.com/dequis/purple-facebook
+# this method gets checkpoint, but only first time, next time it will return cookies
+
+# alternate way, but always get checkpoint, save here for reference
+# https://b-api.facebook.com/method/auth.login?access_token=237759909591655%25257C0f140aabedfb65ac27a739ed1a2263b1&format=json&sdk_version=2&email=XXXX&locale=en_US&password=XXXX&sdk=ios&generate_session_cookies=1&sig=3f555f99fb61fcd7aa0c44f58f522ef
+class FbAuth:
+    """Facebook Auth Helper"""
+
+    def __init__(self, email: str = "", password: str = "") -> None:
+        self.email = email
+        self.password = password
+        self.credentials = {}
+
+    def get_fb_credentials(self) -> dict:
+        """Get FB credentials
+
+        Token, cookies, machine id
+
+        Returns:
+            dict: credentials of user
+        """
+        headers = {
+            "Host": "b-api.facebook.com",
+            "Connection": "Keep-Alive",
+            "Accept": "*/*",
+            "Accept-Encoding": "gzip, deflate",
+            "User-Agent": "Facebook Helper / FRA / 1.0 "
+            "[FBAN/Orca-Android;FBAV/192.0.0.31.101;"
+            "FBPN/com.facebook.orca;FBLC/en_US;FBBV/52182662]",
+            "Content-Type": "application/x-www-form-urlencoded; charset=utf-8",
+        }
+        fb_android_messenger_api_key = "256002347743983"
+        fb_android_messenger_secret_key = "374e60f8b9bb6b8cbb30f78030438895"
+
+        data_dict = {
+            "fb_api_req_friendly_name": "authenticate",
+            "locale": "en",
+            "email": self.email,
+            "password": self.password,
+            "format": "json",
+            "api_key": fb_android_messenger_api_key,
+            "method": "auth.login",
+            "generate_session_cookies": "1",
+        }
+
+        # signature calculation
+        # https://stackoverflow.com/questions/3324444/is-auth-token-and-sig-the-same-thing-in-facebook-api/3324546#3324546
+        pre_signed_data = ""
+        for key in sorted(data_dict.keys()):
+            pre_signed_data = pre_signed_data + key + "=" + data_dict[key]
+        pre_signed_data += fb_android_messenger_secret_key
+        data_dict["sig"] = hashlib.md5(pre_signed_data.encode()).hexdigest()
+
+        args = []
+        for key in sorted(data_dict.keys()):
+            args.append(f"{key}={data_dict[key]}")
+        final_data = "&".join(args)
+
+        response = requests.post(
+            "https://b-api.facebook.com/method/auth.login",
+            headers=headers,
+            data=final_data,
+        )
+        self.credentials = response.json()
+        return self.credentials
+
+    def get_cookies_string(self) -> str:
+        """Return cookies in string format
+
+        Returns:
+            str: cookies in string format
+        """
+        self.get_fb_credentials()
+        cookies_dict = self.credentials["session_cookies"]
+        cookies_list = []
+        for cookie in cookies_dict:
+            cookies_list.append(f"{cookie['name']}={cookie['value']}")
+        raw_cookie = ";".join(cookies_list)
+        return raw_cookie
 
 
 class Fbook:
