@@ -138,7 +138,11 @@ class FbAuth:
             str: cookies in string format
         """
         self.get_fb_credentials()
-        cookies_dict = self.credentials["session_cookies"]
+        try:
+            cookies_dict = self.credentials["session_cookies"]
+        except KeyError as err:
+            log.error(f"Login error. Response:\n {self.credentials}")
+            raise err
         cookies_list = []
         for cookie in cookies_dict:
             cookies_list.append(f"{cookie['name']}={cookie['value']}")
