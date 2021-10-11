@@ -12,5 +12,5 @@ if __name__ == "__main__":
     auth = FbAuth(email_, password_)
     env_str_cookie = f'FB_COOKIES="{auth.get_cookies_string()}"'
 
-    with open(".env", "w") as f:
+    with open(".env", "w", encoding="utf-8") as f:
         f.write(env_str_cookie)
