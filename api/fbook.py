@@ -92,7 +92,7 @@ class FbAuth:
             "Accept": "*/*",
             "Accept-Encoding": "gzip, deflate",
             "User-Agent": "Facebook Helper / FRA / 1.0 "
-            "[FBAN/Orca-Android;FBAV/192.0.0.31.101;"
+            "[FBAN/Orca-Android;FBAV/537.0.0.31.101;"
             "FBPN/com.facebook.orca;FBLC/en_US;FBBV/52182662]",
             "Content-Type": "application/x-www-form-urlencoded; charset=utf-8",
         }
