@@ -35,8 +35,7 @@ class BaseFBAPI:  # pylint: disable=too-few-public-methods
         "Accept": "*/*",
         "Accept-Encoding": "gzip, deflate",
         "User-Agent": "Facebook Helper / FRA / 1.0 "
-        "[FBAN/Orca-Android;FBAV/337.1.0.11.118;"
-        "FBPN/com.facebook.orca;FBLC/en_US;FBBV/52182662]",
+        "[FBAN/Orca-Android;FBAV/537.0.0.31.101;FBPN/com.facebook.orca;FBLC/en_US;FBBV/52182662]",
         "Content-Type": "application/x-www-form-urlencoded; charset=utf-8",
     }
     FB_ANDROID_MESSENGER_API_ID = "256002347743983"
