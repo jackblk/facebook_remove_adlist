@@ -99,7 +99,7 @@ class FbAuth(BaseFBAPI):
             dict: dict of cookies
         """
         if self.fb_email:
-            log.info("Generating FB cookies from app password")
+            log.info("Generating FB cookies")
             raw_cookie = self.get_cookies_string()
         else:
             log.info("Getting FB cookies from Env Var")

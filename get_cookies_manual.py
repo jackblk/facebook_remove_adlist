@@ -1,5 +1,5 @@
 """
-Generate token and cookies from app password
+Generate FB token and cookies
 """
 from getpass import getpass
 import click
