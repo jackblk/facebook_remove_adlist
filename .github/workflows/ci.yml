@@ -28,7 +28,7 @@ jobs:
       - name: Lint
         run: |
           python -m black . --check
-          find . -type f -not -path "./venv/*" -name "*.py" | xargs python -m pylint
+          find . -type f -not -path "./venv/*" -name "*.py" | xargs python -m pylint --errors-only
 
   docker:
     runs-on: ubuntu-latest

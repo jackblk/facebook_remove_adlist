@@ -5,8 +5,7 @@ import logging
 import click
 from rich.logging import RichHandler
 
-from api.fbook import Fbook
-from api.fbook import load_cookies
+from api.fbook import FbAuth, Fbook
 
 logging.basicConfig(level=logging.INFO, handlers=[RichHandler()])
 log = logging.getLogger()
@@ -23,7 +22,7 @@ def cli(context: click.Context):
         context (click.Context): click Context
     """
     log.info("Loading cookies from environment variable.")
-    cookies = load_cookies()
+    cookies = FbAuth().load_cookies()
     context.obj = Fbook(cookies)
 
 

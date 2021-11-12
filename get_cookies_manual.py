@@ -14,12 +14,12 @@ def get_cookies(email):
     Args:
         email (string): email for username
     """
-    # get app password here
-    # https://www.facebook.com/settings?tab=security&section=per_app_passwords
     if email is None:
         email = input("Enter email or username: ")
     password_ = getpass()
-    auth = FbAuth(email, password_)
+    auth = FbAuth()
+    auth.fb_email = email
+    auth.fb_password = password_
     env_str_cookie = f'FB_COOKIES="{auth.get_cookies_string()}"'
 
     with open(".env", "w", encoding="utf-8") as file:

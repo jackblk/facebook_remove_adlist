@@ -29,19 +29,21 @@ This is my experience using this method for **more than 3 years** and it has bee
 ## Installation
 ### Install dependencies
 
-Python version: >=3.8
+Python version: >=3.9
 
 `python -m pip install -r requirements.txt`
 
 ## Setting up
 
 ### For Docker container
-Set Env Var or create a file `.env` in this folder with username/email & [app password](https://www.facebook.com/settings?tab=security&section=per_app_passwords):
+Set Env Var or create a file `.env` in this folder with username/email, password & TOTP Secret Key (if you have 2FA enabled)
 ```bash
 FB_EMAIL="email_or_username_here"
-FB_APP_PASSWORD="app_password_here"
+FB_PASSWORD="app_password_here"
+FB_TOTP_2FA_SECRET="ZYTYYE5FOAGW5ML7LRWUL4WTZLNJAMZS" # TOTP only, base32, no whitespace
 # If no email provided, it will use the FB_COOKIES env
 FB_COOKIES="your_cookies"
+
 ```
 ### For manual cookies generation (optional)
 
