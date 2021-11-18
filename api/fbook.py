@@ -8,6 +8,7 @@ import logging
 import hashlib
 import uuid
 from http.cookies import SimpleCookie
+from urllib.parse import quote
 from typing import Dict
 
 import requests
@@ -131,7 +132,10 @@ class FbAuth(BaseFBAPI):
         )
         pre_signed_data += self.FB_ANDROID_MESSENGER_SECRET_KEY
         data_dict["sig"] = hashlib.md5(pre_signed_data.encode("utf-8")).hexdigest()
-        return "&".join(f"{key}={value}" for key, value in sorted(data_dict.items()))
+        return "&".join(
+            f"{quote(str(key))}={quote(str(value))}"
+            for key, value in sorted(data_dict.items())
+        )
 
     def get_fb_credentials(self) -> dict:
         """Get FB credentials
