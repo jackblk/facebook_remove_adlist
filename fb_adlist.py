@@ -2,6 +2,7 @@
 Fbook Remove Adlist
 """
 import logging
+
 import click
 from rich.logging import RichHandler
 

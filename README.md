@@ -60,12 +60,24 @@ Or you can set it to enviroment variables for your OS.
 
 Generate your cookies manually with `python get_cookies_manual.py`
 
+Run with Docker:
+
+```shell
+docker run --rm --pull=always \
+    -v $PWD/.env:/app/.env \
+    ghcr.io/jackblk/fb-adlist-remover all
+```
+
+<details>
+<summary>Non docker</summary>
 To view all commands & helps, run `python fb_adlist.py`
 
 To run all commands at once:
 ```bash
 python fb_adlist.py all
 ```
+
+</details>
 
 ### Hide all ads from page
 

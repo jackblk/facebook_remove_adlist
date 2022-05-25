@@ -2,7 +2,9 @@
 Generate FB token and cookies
 """
 from getpass import getpass
+
 import click
+
 from api.fbook import FbAuth
 
 

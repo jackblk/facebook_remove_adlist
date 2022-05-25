@@ -1,20 +1,20 @@
 """
 Facebook API helper
 """
-import os
-import re
+import hashlib
 import json
 import logging
-import hashlib
+import os
+import re
 import uuid
 from http.cookies import SimpleCookie
-from urllib.parse import quote
 from typing import Dict
+from urllib.parse import quote
 
+import mintotp
 import requests
 from dotenv import load_dotenv
 from rich.logging import RichHandler
-import mintotp
 
 logging.basicConfig(level=logging.INFO, handlers=[RichHandler()])
 log = logging.getLogger(__name__)
