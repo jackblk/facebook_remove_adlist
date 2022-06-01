@@ -36,15 +36,23 @@ Python version: >=3.9
 ## Setting up
 
 ### For Docker container
+
+Generate `.env` file in the folder:
+
+```shell
+docker run --rm -it --entrypoint python -v $(pwd)/.env:/app/.env ghcr.io/jackblk/fb-adlist-remover get_cookies_manual.py
+```
+
 Set Env Var or create a file `.env` in this folder with username/email, password & TOTP Secret Key (if you have 2FA enabled)
+
 ```bash
 FB_EMAIL="email_or_username_here"
 FB_PASSWORD="app_password_here"
 FB_TOTP_2FA_SECRET="ZYTYYE5FOAGW5ML7LRWUL4WTZLNJAMZS" # TOTP only, base32, no whitespace
 # If no email provided, it will use the FB_COOKIES env
 FB_COOKIES="your_cookies"
-
 ```
+
 ### For manual cookies generation (optional)
 
 To generate this step, use `python get_cookies_manual.py`.
